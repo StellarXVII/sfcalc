@@ -1,0 +1,1024 @@
+<!--
+ Copyright (C) 2021 Seggan
+ 
+ This file is part of SFCalc-Online.
+ 
+ SFCalc-Online is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ SFCalc-Online is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with SFCalc-Online.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<meta name="description" content="Calculate the resources for any Slimefun item" />
+
+	<title>ISFC</title>
+
+	<script>
+		/*addEventListener('domcontentloaded', function(){
+			var HTML = document.getElementsByTagName('html')[0].innerHTML;
+			setTimeout(()=>{
+				document.write(HTML);
+				alert('HTML rewritten.');
+			}, 2500);
+		});*/
+		// Copyright (C) 2021 Seggan
+		// 
+		// This file is part of SFCalc-Online.
+		// 
+		// SFCalc-Online is free software: you can redistribute it and/or modify
+		// it under the terms of the GNU General Public License as published by
+		// the Free Software Foundation, either version 3 of the License, or
+		// (at your option) any later version.
+		// 
+		// SFCalc-Online is distributed in the hope that it will be useful,
+		// but WITHOUT ANY WARRANTY; without even the implied warranty of
+		// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+		// GNU General Public License for more details.
+		// 
+		// You should have received a copy of the GNU General Public License
+		// along with SFCalc-Online.  If not, see <http://www.gnu.org/licenses/>.
+
+
+		//removeStorage();
+
+		function lBozo() {
+			document.getElementsByTagName('table')[1].innerHTML = document.getElementsByTagName('table')[1].innerHTML.split('§l').join('');
+		}
+
+
+		function toggleTheme() {
+			var text = document.getElementsByTagName('html')[0].style.color;
+
+			if (text == 'black' || text == '') {
+				document.getElementsByTagName('html')[0].style.color = 'white';
+				document.getElementsByTagName('html')[0].style.backgroundColor = 'black';
+				//document.getElementById('themeImg').style.webkitFilter = 'invert(1)';
+				document.getElementById('themeImg').style.filter = 'invert(1)';
+				document.getElementsByClassName('columns')[0].style.borderColor = 'white';
+				document.getElementsByClassName('columns')[1].style.borderColor = 'white';
+			}
+			else if (text == 'white') {
+				document.getElementsByTagName('html')[0].style.color = 'black';
+				document.getElementsByTagName('html')[0].style.backgroundColor = 'white';
+				//document.getElementById('themeImg').style.webkitFilter = 'invert(0)';
+				document.getElementById('themeImg').style.filter = 'invert(0)';
+				document.getElementsByClassName('columns')[0].style.borderColor = 'black';
+				document.getElementsByClassName('columns')[1].style.borderColor = 'black';
+			}
+		}
+
+		function removeStorage() {
+			localStorage.removeItem('name1');
+			localStorage.removeItem('name2');
+			localStorage.removeItem('name3');
+			localStorage.removeItem('name4');
+			localStorage.removeItem('name5');
+			localStorage.removeItem('ID1');
+			localStorage.removeItem('ID2');
+			localStorage.removeItem('ID3');
+			localStorage.removeItem('ID4');
+			localStorage.removeItem('ID5');
+		}
+
+		setTimeout(toggleTheme, 100);
+
+		var slider = document.getElementsByClassName('checkbox');
+
+		const items = {};
+		var blacklistedItems = [
+			"UU_MATTER",
+			"SILICON",
+			"RUBBER",
+			"VOID_BIT"
+		];
+		var blacklistedRecipes = [
+			"ore_washer",
+			"geo_miner",
+			"gold_pan",
+			"mob_drop",
+			"barter_drop",
+			"ore_crusher",
+			"multiblock",
+			"meteor_attractor",
+			"alien_drop",
+			"world_gen"
+		];
+
+		let options = '';
+		fetch('https://raw.githubusercontent.com/Seggan/SFCalc-Online/master/src/items.json')
+			.then(res => res.json())
+			.then(itemList => {
+				for (const item of itemList) {
+					items[item.id] = item;
+					options += '<option value="' + item.id + '">';
+				}
+				document.getElementById('allitems').innerHTML = options;
+			}).catch(_err => console.error);
+
+		function add(map, key, amount) {
+			if (key in map) {
+				map[key] += amount;
+			} else {
+				map[key] = amount;
+			}
+		}
+
+		function calculate(itemStr, amount) {
+			const results = {};
+			const item = items[itemStr];
+			results[item.id] = amount;
+
+			let nextItem;
+			while (nextItem = getNextItem(results)) {
+				const operations = Math.ceil(results[nextItem.id] / nextItem.result);
+				add(results, nextItem.id, -1 * operations * nextItem.result);
+				for (const ingredient of nextItem.recipe) {
+					add(results, ingredient.value, operations * ingredient.amount);
+				}
+			}
+
+			return results;
+		}
+
+		function getNextItem(map) {
+			var slider = document.getElementsByClassName('checkbox');
+
+			var blacklistedRecipes = [
+				"ore_washer",
+				"geo_miner",
+				"gold_pan",
+				"mob_drop",
+				"barter_drop",
+				"ore_crusher",
+				"multiblock",
+				"meteor_attractor",
+				"alien_drop",
+				"world_gen"
+			];
+
+			if (slider[3].checked == true) {
+				blacklistedRecipes = blacklistedRecipes.concat(["singularity_constructor"]);
+			}
+			if (slider[11].checked == true) {
+				blacklistedRecipes = blacklistedRecipes.concat(["ion_exchange_separator"]);
+			}
+
+			var blacklistedItems = [
+				"UU_MATTER",
+				"SILICON",
+				"RUBBER",
+				"VOID_BIT"
+			];
+			if (slider[13].checked == true) {
+				blacklistedItems =
+					blacklistedItems.concat([
+						"MAGSTEEL",
+						"HARDENED_METAL_INGOT",
+						"REINFORCED_ALLOY_INGOT",
+						"DAMASCUS_STEEL_INGOT",
+						"REDSTONE_ALLOY",
+						"STEEL",
+						"ALUMINUM_BRONZE_INGOT",
+						"ALUMINUM_BRASS_INGOT",
+						"CORINTHIAN_BRONZE_INGOT",
+						"NICKEL_INGOT",
+						"COBALT_INGOT",
+						"DURALUMIN_INGOT",
+						"SOLDER_INGOT",
+						"BILLON_INGOT",
+						"BRONZE",
+						"BLISTERING_INGOT_3",
+						"GOLD_24K"
+					]);
+			}
+			if (slider[14].checked == true) {
+				blacklistedItems =
+					blacklistedItems.concat([
+						"MAGNESIUM_INGOT",
+						"TIN_INGOT",
+						"ALUMINUM_INGOT",
+						"COPPER_INGOT",
+						"GOLD_24K",
+						"ZINC_INGOT",
+						"LEAD_INGOT",
+						"SILVER_INGOT",
+						"OSMIUM_INGOT"
+					]);
+			}
+
+			var slider = document.getElementsByClassName('checkbox');
+			var BL = [];
+
+			for (let i = 0; i < slider.length; i++) {
+				if (slider[i].checked == true && slider[i].name) {
+					BL.push(slider[i].name);
+				}
+			}
+			blacklistedItems = blacklistedItems.concat(BL);
+
+			for (const item in map) {
+				if (item.toUpperCase() == item && !blacklistedItems.includes(item) && !blacklistedRecipes.includes(items[item].recipeType) && map[item] > 0) {
+					return items[item];
+				}
+			}
+			return null;
+		}
+
+		window.onload = _e => {
+			//setTimeout(()=>{var firebug=document.createElement('script');firebug.setAttribute('src','https://luphoria.com/fbl/fbl/firebug-lite-debug.js');document.body.appendChild(firebug);(function(){if(window.firebug.version){firebug.init();}else{setTimeout(arguments.callee);}})();void(firebug);}, 1000);
+
+			var allButOrange = document.getElementsByClassName('checkbox').length;// - 1;
+			for (let i = 0; i < allButOrange; i++) {
+				document.getElementsByClassName('checkbox')[i].addEventListener('change', () => {
+					if (document.getElementById('id').value != '') { document.getElementById('submit').click(); }
+				});
+			}
+
+
+			/*for(let i = 0; i < 3; i++){
+					document.getElementsByClassName('checkbox')[i].checked = true;
+			}*/
+
+			document.getElementById('calculator').onsubmit = _e => {
+				const id = document.getElementById('id').value.toUpperCase();
+				if (!(id in items)) {
+					alert('Invalid item ID');
+					return false;
+				}
+
+				const amount = parseInt(document.getElementById('amount').value);
+				let results = calculate(id, amount);
+
+				results = Object.fromEntries(Object.entries(results).sort(([, a], [, b]) => a - b));
+
+				document.getElementById('result-table').removeAttribute('hidden');
+
+				const div = document.getElementById('results');
+				div.innerHTML = '';
+				for (const result in results) {
+					let color = '_0';
+					let name = result;
+					var slider = document.getElementsByClassName('checkbox');
+					//begin coal replacement------------------------------------------------------------------------------
+					if (slider[0].checked == true) {
+						if (name == 'Coal') {
+							name = '§bDiamond (Coal ÷ 32)';
+							var deno = 32;
+							if (results[result] / deno != Math.floor(results[result] / deno)) {
+								results[result] = Math.floor(results[result] / deno) + 1;
+							}
+							else results[result] = Math.floor(results[result] / deno);
+						}
+					}
+					//end coal replacement--------------------------------------------------------------------------------
+					if (slider[1].checked == true) {
+						if (name == 'HARDENED_METAL_INGOT') name = '§bHardened Metal';
+					}
+					if (slider[1].checked == true) {
+						if (name == 'REINFORCED_ALLOY_INGOT') name = '§bReinforced Alloy Ingot';
+					}
+					if (slider[9].checked == true) {
+						if (name.includes('CARBONADO')) name = '§bCarbonado';
+					}
+
+					if (name == 'MAGIC_LUMP_1') name = '§eMagical Lump I';
+					if (name == 'MAGIC_LUMP_2') name = '§eMagical Lump II';
+					if (name == 'MAGIC_LUMP_3') name = '§eMagical Lump III';
+					if (name == 'MAGIC_LUMP_4') name = '§eMagical Lump IV';
+					if (name == 'MAGIC_LUMP_5') name = '§eMagical Lump V';
+					if (name == 'GOLD_24K') name = '§bGold (24-Carat)';
+
+					if (results[name] <= 0) {
+						continue;
+					}
+
+					if (name.toUpperCase() === name) {
+						name = items[result].name;
+					}
+
+					if (name.startsWith('§')) {
+						color = '_' + name.charAt(1);
+						name = name.substring(2);
+					}
+
+
+
+					var stacks = Math.floor(results[result] / 64);
+					var remainder = ((results[result] / 64) - stacks) * 64;
+					var chestsRaw = results[result] / 64 / 54;
+					var chests = Math.floor(results[result] / 64 / 54 + 1);
+					if (parseInt(results[result]) != 0) {
+						const disp = document.createElement('tr');
+						var cats = document.getElementById('categories');
+
+
+						if (!singul) var singul = [];
+						if (!singStacks) var singStacks = [];
+						if (!singRem) var singRem = [];
+						if (!singTotal) var singTotal = [];
+						if (!singChests) var singChests = [];
+
+						var hasSingul;
+						var index = 12;
+						//begin new column creation ------------------------------------------------------------------------------
+						if (slider[index].checked == true && !name.includes(' Singularity')) {
+							cats.innerHTML = '<th>Item</th> <th>Stacks</th> <th>Items</th> <th>Double Chests</th> <th>Total</th>';
+							if (chestsRaw < 1) disp.innerHTML = '<td class="' + color + '\"><b>' + name + '</b></td><td>' + stacks + '</td><td>' + remainder + '</td><td>&lt; 1</td><td>' + results[result] + '</td>';
+							else disp.innerHTML = '<td class="' + color + '\"><b>' + name + '</b></td><td>' + stacks + '</td><td>' + remainder + '</td><td>' + chests + '</td><td>' + results[result] + '</td>';
+						}
+						else if (name.includes(' Singularity') && slider[index].checked != false) {
+							singul.push(name);
+							singStacks.push(stacks);
+							singRem.push(remainder);
+							singTotal.push(results[result]);
+
+							if (results[result] / 64 / 54 >= 1) singChests.push(chests);
+							else if (results[result] / 64 / 54 < 1) singChests.push('< 1');
+							hasSingul = true;
+
+						}
+						else if (slider[index].checked == false) {
+							cats.innerHTML = '<th>Item</th> <th>Amount</th>';
+							disp.innerHTML = '<td class="' + color + '\"><b>' + name + '</b></td><td>' + results[result] + '</td>';
+						}
+
+
+						//end new column creation --------------------------------------------------------------------------------
+
+						div.appendChild(disp);
+
+					}
+				}
+
+				//singul = '<tr class="singulRow"><td><b>'+singul.join('</b></td><td> - </td><td> - </td><td> - </td><td> - </td></tr><tr class="singulRow"><td><b>')+'</b></td><td> - </td><td> - </td><td> - </td><td> - </td></tr>';
+
+				var singTemp = '<tr class="singulRow"><td><b>';
+
+
+				for (let i = 0; i < singul.length; i++) {
+					if (i != singul.length - 1) singTemp += singul[i] + '</b></td><td>' + singStacks[i] + '</td><td>' + singRem[i] + '</td><td>' + singChests[i] + '</td><td>' + singTotal[i] + '</td></tr><tr class="singulRow"><td><b>';
+					else singTemp += singul[i] + '</b></td><td>' + singStacks[i] + '</td><td>' + singRem[i] + '</td><td>' + singChests[i] + '</td><td>' + singTotal[i] + '</td>';
+				}
+
+
+
+
+				if (hasSingul == true && slider[index].checked == true) {
+					setTimeout(() => {
+						document.getElementById('result-table').getElementsByTagName('tbody')[0].getElementsByTagName('tr')[0].insertAdjacentHTML('beforebegin', '<tr><td class="_5" id="singTitle" style="padding:20px;" onclick="singVis();"><b>Singularities (click)</b></td><td> - </td><td> - </td><td> - </td><td> - </td></tr>' + singTemp);
+						document.getElementById('singTitle').click();
+
+					}, 10);
+				}
+				else if (slider[0].checked == false) {
+					//setTimeout(()=>document.getElementById('result-table').getElementsByTagName('tbody')[0].getElementsByTagName('tr')[0].insertAdjacentHTML('beforebegin', '<tr><td class="_5" id="singTitle" style="padding:20px;" onclick="singVis();"><b>Singularities</b></td><td> - </td></tr>'), 100);
+				}
+
+				setTimeout(lBozo, 100);
+				return false;
+			};
+
+			//custom filters-------------------
+
+
+			var cust = document.getElementsByClassName('customToggle');
+			var storage = {
+				'name1': localStorage.getItem('name1'),
+				'name2': localStorage.getItem('name2'),
+				'name3': localStorage.getItem('name3'),
+				'name4': localStorage.getItem('name4'),
+				'name5': localStorage.getItem('name5'),
+				'name6': localStorage.getItem('name6'),
+				'name7': localStorage.getItem('name7'),
+				'name8': localStorage.getItem('name8'),
+
+				'ID1': localStorage.getItem('ID1'),
+				'ID2': localStorage.getItem('ID2'),
+				'ID3': localStorage.getItem('ID3'),
+				'ID4': localStorage.getItem('ID4'),
+				'ID5': localStorage.getItem('ID5'),
+				'ID6': localStorage.getItem('ID6'),
+				'ID7': localStorage.getItem('ID7'),
+				'ID8': localStorage.getItem('ID8')
+			};
+
+			for (let i = 0; i < 8; i++) {
+				var i1 = i + 1;
+				if (storage['name' + i1] && storage['ID' + i1])
+					cust[i].innerHTML = '<span class="custLabel toggleTitle" onclick="document.getElementsByClassName(\'custSwitch\')[' + i + '].click()">' + storage['name' + i1] + '</span> <label class="switch custSwitch"> <input class="checkbox custCheck" type="checkbox" checked name="' + storage['ID' + i1] + '"> <span class="slider round orange"></span> </label><br><span class="delete" onclick="delTog(' + i1 + ')">Delete Toggle</span>';
+				else
+					cust[i].innerHTML = '<input type="button" title="add Custom Toggle" onclick="addCust(' + i1 + ');" class="addCust" value="+" style="height:50px;width:50px;"><input class="custLabel checkbox custSwitch" hidden>';
+
+			}
+
+		};
+
+		function addCust(i) {
+			var name = prompt('What will your Custom Toggle be labeled?');
+			if (name == null) return null;
+			name = name.replaceAll("  ", "");
+			while (name.startsWith(" ")) name = name.substring(1);
+			while (name.endsWith(" ")) name = name.substring(0, name.length - 1);
+			localStorage.setItem('name' + i, name);
+			var ID = prompt('Enter the ID of the item to be filtered:');
+			ID = ID.toUpperCase().replaceAll(" ", "_");
+			if (ID == null) return null;
+			var c = confirm('Create new Custom Toggle? (this will also refresh your page)');
+			if (c == true) {
+				localStorage.setItem('ID' + i, ID);
+				window.location.href = window.location.href;
+			}
+			else return null;
+		}
+		function delTog(i) {
+			var c = confirm('Are you sure you want to delete the toggle "' + document.getElementsByClassName('custLabel')[i - 1].textContent + '" that filters the item ' + document.getElementsByClassName('custCheck')[i - 1].name + '?\n\n(this will also refresh your page)');
+			if (c == true) {
+				localStorage.removeItem('name' + i);
+				localStorage.removeItem('ID' + i);
+				window.location.href = window.location.href;
+			}
+		}
+		function singVis() {
+			for (let i = 0; i < document.getElementsByClassName('singulRow').length; i++) {
+				//alert(document.getElementsByClassName('singulRow')[0]);
+				if (document.getElementsByClassName('singulRow')[i].style.display == 'table-row') {
+					//alert('disp auto');
+					document.getElementsByClassName('singulRow')[i].style.display = 'none';
+				}
+
+				else if (!document.getElementsByClassName('singulRow')[i].style.display) {
+					document.getElementsByClassName('singulRow')[i].style.display = 'none';
+					//alert('disp undefined');
+				}
+				else if (document.getElementsByClassName('singulRow')[i].style.display == 'none') {
+					//alert('disp none');
+					document.getElementsByClassName('singulRow')[i].style.display = 'table-row';
+				}
+			}
+		}
+		function optionBar(end) {
+			if (document.getElementById('sidebar').style.transform != 'translateY(-15%)') {
+				for (let i = 0; i <= end; i++) {
+					document.getElementsByClassName('slider')[i].style.display = 'none';
+				}
+				document.getElementById('sidebar').style.transition = '0.1s transform';
+				document.getElementById('sidebar').style.visibility = 'hidden';
+				document.getElementById('sidebar').style.transform = 'translateY(-15%) translateX(100%)';
+				setTimeout(() => {
+					for (let i = 0; i <= end; i++) {
+						document.getElementsByClassName('slider')[i].style.display = 'block';
+					}
+					document.getElementById('sidebar').style.transition = '1s transform';
+					document.getElementById('sidebar').style.visibility = 'visible';
+					document.getElementById('sidebar').style.transform = 'translateY(-15%)';
+				}, 150);
+			}
+			else {
+
+				document.getElementById('sidebar').style.transition = '1s transform';
+				document.getElementById('sidebar').style.transform = 'translateY(-15%) translateX(100%)';
+				setTimeout(() => {
+					for (let i = 0; i <= end; i++) {
+						document.getElementsByClassName('slider')[i].style.display = 'none';
+					}
+					document.getElementById('sidebar').style.transition = '0.1s transform';
+					document.getElementById('sidebar').style.visibility = 'hidden';
+					document.getElementById('sidebar').style.transform = 'translateY(-15%) translateX(-500%)';
+				}, 1000);
+			}
+
+
+		}
+	</script>
+	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />
+	<style>
+		/**
+			* Copyright (C) 2021 Seggan
+			* 
+			* This file is part of SFCalc-Online.
+			* 
+			* SFCalc-Online is free software: you can redistribute it and/or modify
+			* it under the terms of the GNU General Public License as published by
+			* the Free Software Foundation, either version 3 of the License, or
+			* (at your option) any later version.
+			* 
+			* SFCalc-Online is distributed in the hope that it will be useful,
+			* but WITHOUT ANY WARRANTY; without even the implied warranty of
+			* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+			* GNU General Public License for more details.
+			* 
+			* You should have received a copy of the GNU General Public License
+			* along with SFCalc-Online.  If not, see <http://www.gnu.org/licenses/>.
+			*/
+
+		* {
+			font-family: 'Open Sans';
+			margin-left: auto;
+			margin-right: auto;
+			text-align: center;
+		}
+
+		html,
+		body {
+			height: 99.5%;
+		}
+
+		html {
+			margin-top: -7.6px;
+		}
+
+		/*h1, h6, form {
+				width: 45%;
+			}*/
+
+		h6 {
+			margin-top: 5px;
+		}
+
+		#amount {
+			width: 10%;
+		}
+
+		a,
+		a:visited {
+			color: cornflowerblue;
+		}
+
+		td {
+			padding: 6px;
+			background-color: white;
+			color: black;
+		}
+
+		table,
+		th,
+		td {
+			border-collapse: collapse;
+			border: 1px solid black;
+		}
+
+		table {
+			margin-top: 75px;
+			width: 76%;
+		}
+
+		._0,
+		._f {
+			color: #000000;
+		}
+
+		._1 {
+			color: #0000aa;
+		}
+
+		._2 {
+			color: #00aa00;
+		}
+
+		._3 {
+			color: #00aaaa;
+		}
+
+		._4 {
+			color: #aa0000;
+		}
+
+		._5 {
+			color: #aa00aa;
+		}
+
+		._6 {
+			color: #ffaa00;
+		}
+
+		._7 {
+			color: #aaaaaa;
+		}
+
+		._8 {
+			color: #555555;
+		}
+
+		._9 {
+			color: #5555ff;
+		}
+
+		._a {
+			color: #55ff55;
+		}
+
+		._b {
+			/*color: #55ffff;*/
+			color: #29ccc1;
+		}
+
+		._c {
+			color: #ff5555;
+		}
+
+		._d {
+			color: #ff55ff;
+		}
+
+		._e {
+			/*color: #ffff55;*/
+			color: #e6c702;
+		}
+
+
+		.gifBkg {
+			/*background: url('https://static.wikia.nocookie.net/minecraft_gamepedia/images/2/22/End_Gateway.gif/revision/latest?cb=20201207133305');
+				background-repeat: no-repeat;
+				background-size: cover;
+				background: url('https://i.gifer.com/6Je.gif');
+				color: #de466c;
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;*/
+			color: #6600CC;
+			margin-bottom: -10px;
+		}
+
+		#title {
+			margin-bottom: -20px;
+		}
+
+		#theme {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			visibility: hidden;
+		}
+
+		#themeImg {
+			visibility: visible;
+			width: 50px;
+			cursor: pointer;
+		}
+
+		.columns {
+			height: 100%;
+			border-style: solid;
+			border-color: white;
+			width: 50%;
+
+		}
+
+		#split {
+			display: flex;
+			height: 100%;
+		}
+
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 39px;
+			height: 23px;
+			margin-top: 10px;
+		}
+
+		.switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #ccc;
+			-webkit-transition: .4s;
+			transition: .4s;
+		}
+
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 16.9px;
+			width: 16.9px;
+			left: 2.6px;
+			bottom: 3px;
+			background-color: white;
+			-webkit-transition: .4s;
+			transition: .4s;
+		}
+
+		input:checked+.slider {
+			background-color: #6600CC;
+		}
+
+		input:focus+.slider {
+			box-shadow: 0 0 1px #6600CC;
+		}
+
+		input:checked+.slider:before {
+			-webkit-transform: translateX(16.9px);
+			-ms-transform: translateX(16.9px);
+			transform: translateX(16.9px);
+		}
+
+		/* Rounded sliders */
+		.slider.round {
+			border-radius: 34px;
+		}
+
+		.slider.round:before {
+			border-radius: 50%;
+		}
+
+		span {
+			cursor: pointer;
+		}
+
+		.expFeat {
+			padding: 20px;
+			background-color: black;
+			color: white;
+		}
+
+		#expFeatTable {
+			margin-top: 25px;
+		}
+
+		#result-table {
+			width: 90%;
+			margin-top: 85px;
+		}
+
+		.addCust {
+			border: solid 2px purple;
+			border-radius: 25px;
+			background-color: black;
+			color: white;
+			font-weight: 800;
+			cursor: pointer;
+		}
+
+		.addCust:hover {
+			background-color: #222222;
+		}
+
+		.addCust:active {
+			background-color: #333333;
+		}
+
+		.delete {
+			font-size: 10px;
+			color: rgb(100, 150, 255);
+			text-decoration: underline;
+		}
+
+		.singulRow {
+			width: 90%;
+			font-size: 12px;
+		}
+
+		input:checked+.orange {
+			background-color: orange;
+		}
+
+		#sidebar {
+			width: 300px;
+			background: black;
+			position: absolute;
+			right: 0px;
+			border: solid white 3px;
+			border-right: solid black 3px;
+			border-bottom-left-radius: 25px;
+			border-top-left-radius: 25px;
+			transform: translateY(20%) translateX(-500%);
+			transition: 2s transform;
+		}
+
+		label {
+			margin-bottom: 20px;
+		}
+	</style>
+</head>
+
+<body>
+	<noscript>JavaScript is disabled! Please enable JavaScript.</noscript>
+	<div id="split">
+		<div class="columns" style="width:700px;">
+			<h1 id="title">SlimeFun Calculator</h1>
+			<h3 class="gifBkg">Interstellar Version</h3>
+			<br>
+			<datalist id="allitems"></datalist>
+			<form id="calculator">
+				<label for="id">Enter the item ID:</label>
+				<input type="search" list="allitems" id="id" autocomplete="off" value="">
+				<input type="number" id="amount" min="1" value="1">
+				<input type="submit" value="Calculate!" id="submit">
+				<table id="expFeatTable">
+					<tbody>
+						<tr>
+							<td class="expFeat">
+								<span class="toggleTitle"
+									onclick="document.getElementsByClassName('switch')[12].click()">Stack
+									Convert&nbsp;</span>
+								<label class="switch">
+									<input class="checkbox" type="checkbox" checked>
+									<span class="slider round"></span>
+								</label>
+							</td>
+							<td class="expFeat">
+								<span class="toggleTitle"
+									onclick="document.getElementsByClassName('switch')[13].click()"><abbr
+										title="Including Magsteel, Steel, Damascus Steel, Reinforced Alloy, Hardened Metal, Redstone Alloy, 24 Carat Gold, Blistering Ingots, Bronze, Corinthian Bronze, Aluminum Bronze, Aluminum Brass, Brass, Nickel, Cobalt, Billon... Solder... and... Duralumin. *collapses*">Auto
+										Ingots</abbr>&nbsp;</span>
+								<label class="switch">
+									<input class="checkbox" type="checkbox">
+									<span class="slider round"></span>
+								</label>
+							</td>
+							<td class="expFeat">
+								<span class="toggleTitle"
+									onclick="document.getElementsByClassName('switch')[14].click()">Ingots not
+									Dust&nbsp;</span>
+								<label class="switch">
+									<input class="checkbox" type="checkbox">
+									<span class="slider round"></span>
+								</label>
+							</td>
+							<td style="background:black;">
+								<input type="button" onclick="optionBar(11)" value="Other Options">
+							</td>
+
+						</tr>
+
+
+
+
+
+						<tr style="border-top:solid white 2px;">
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+						</tr>
+
+						<tr>
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+							<td class="expFeat customToggle">
+
+							</td>
+
+							<!--<td style="border-radius:15px;"><abbr title="SORRY that im in a hurry but its sort of the END OF THE SCHOOL YEAR and FINALS are coming. so yeah >:/">custom toggles are now autochecked</abbr></td>-->
+						</tr>
+					</tbody>
+					<div id="sidebar">
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[0].click()">Coal to
+							Diamonds&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[1].click()">Uranium
+							Convert&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="URANIUM">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[2].click()">Void
+							Ingots&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="VOID_INGOT">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle"
+							onclick="document.getElementsByClassName('switch')[3].click()">Singularities&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle"
+							onclick="document.getElementsByClassName('switch')[4].click()">Carbon&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="CARBON">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[5].click()">Quad
+							Cobble&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="COMPRESSED_COBBLESTONE_4">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle"
+							onclick="document.getElementsByClassName('switch')[6].click()">Carbonado&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="CARBONADO">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle"
+							onclick="document.getElementsByClassName('switch')[7].click()">Electromagnet&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="ELECTRO_MAGNET">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle"
+							onclick="document.getElementsByClassName('switch')[8].click()">Electric Motor&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="ELECTRIC_MOTOR">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[9].click()">Earth
+							Singularity&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="EARTH_SINGULARITY">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[10].click()">Metal
+							Singularity&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox" name="METAL_SINGULARITY">
+							<span class="slider round"></span>
+						</label>
+						<br>
+						<span class="toggleTitle" onclick="document.getElementsByClassName('switch')[11].click()"><abbr
+								title="Monazite-deriven elements/metals">Lanthanides</abbr>&nbsp;</span>
+						<label class="switch">
+							<input class="checkbox" type="checkbox">
+							<span class="slider round"></span>
+						</label>
+					</div>
+				</table>
+
+			</form>
+
+		</div>
+		<div class="columns" style="overflow-y:scroll;">
+			<table hidden id="result-table">
+				<thead>
+					<tr id="categories">
+						<th>Item</th>
+						<th>Stacks</th>
+						<th>Items</th>
+						<th>Double Chests</th>
+						<th>Total</th>
+					</tr>
+				</thead>
+				<tbody id="results"></tbody>
+			</table>
+			<h4><a style="text-decoration:underline; cursor:pointer;"
+					onclick="alert('*no*'/*'Alright here are the changes:\n\n\t⬤\tAdded new columns, including separating stacks and remainders, double chests needed, and the original in case needed.\n\n\t⬤\tReplaced Coal with the appropriate amount of Diamonds, and updated values, too\n\n\t⬤\tReplaced Tiny Pile of Uranium with the appropriate amount of Small Chunks of Uranium, and updated values appropriately'*/);">Changelog</a>
+			</h4>
+			<h5>Based on SFCalc-Online by Seggan</h5>
+		</div>
+
+
+	</div>
+
+	<button id="theme" onclick="toggleTheme();"><img id="themeImg"
+			src="https://th.bing.com/th/id/OIP.0EBlaoSN7k454jhw-HP5sgHaHZ?rs=1&pid=ImgDetMain"></button>
+
+	<!-- Cloudflare Pages Analytics -->
+	<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+		data-cf-beacon='{"token": "8941f2576950457d903e6878a35607e1"}'></script><!-- Cloudflare Pages Analytics -->
+</body>
+
+</html>
